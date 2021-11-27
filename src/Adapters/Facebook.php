@@ -18,6 +18,7 @@ class Facebook extends Webpage
     {
         return $response->isValid() && $response->getUrl()->match([
             'www.facebook.com/*',
+            'fb.watch/*',
         ]);
     }
 

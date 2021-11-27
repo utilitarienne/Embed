@@ -110,6 +110,13 @@ class Facebook extends Provider
         if (empty($key)) {
             return;
         }
+		
+		if ($url->match('login') !== false) {
+            $next = $url->getQueryParameter('next');
+            if ($next) {
+                $url = Url::create($next);
+            }
+        }
 
         if ($url->getDirectoryPosition(0) === 'events') {
             return  Url::create('https://graph.facebook.com/')
@@ -118,11 +125,21 @@ class Facebook extends Provider
                         ->withQueryParameter('fields', $this->adapter->getConfig('facebook[events_fields]'));
         }
 
-        if ($url->getDirectoryPosition(1) === 'videos') {
-            return  Url::create('https://graph.facebook.com/')
-                        ->withAddedPath($url->getDirectoryPosition(2))
-                        ->withQueryParameter('access_token', $key)
-                        ->withQueryParameter('fields', $this->adapter->getConfig('facebook[videos_fields]'));
+		if ($url->getDirectoryPosition(1) === 'videos' || $url->match('fb.watch')) {
+            return Url::create('https://graph.facebook.com/v12.0/oembed_video/')
+                        ->withQueryParameter('url', "{$url}")
+                        ->withQueryParameter('access_token', $key);
         }
+		
+		if ($url->getDirectoryPosition(1) === 'photos' || $url->getDirectoryPosition(1) === 'posts') {
+            return Url::create('https://graph.facebook.com/v12.0/oembed_post/')
+                        ->withQueryParameter('url', "{$url}")
+                        ->withQueryParameter('access_token', $key);
+        }
+
+        // fallback to oembed page
+        return Url::create('https://graph.facebook.com/v12.0/oembed_page/')
+                    ->withQueryParameter('url', "{$url}")
+                    ->withQueryParameter('access_token', $key);
     }
 }
